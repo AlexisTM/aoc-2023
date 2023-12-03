@@ -79,12 +79,10 @@ fn main() {
         .fold(0, |acc, (_game_id, states)| {
             let reduced = states
                 .iter()
-                .fold(State { r: 0, g: 0, b: 0 }, |acc, state| {
-                    State {
-                        r: cmp::max(acc.r, state.r),
-                        g: cmp::max(acc.g, state.g),
-                        b: cmp::max(acc.b, state.b),
-                    }
+                .fold(State { r: 0, g: 0, b: 0 }, |acc, state| State {
+                    r: cmp::max(acc.r, state.r),
+                    g: cmp::max(acc.g, state.g),
+                    b: cmp::max(acc.b, state.b),
                 });
 
             acc + (reduced.r * reduced.b * reduced.g)
