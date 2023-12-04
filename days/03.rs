@@ -19,17 +19,15 @@ impl Problem {
         Problem {
             height: height as i16,
             width: width as i16,
-            problem_data: problem_data,
+            problem_data,
         }
     }
 
     pub fn get(&self, height: i16, width: i16) -> char {
-        if height < 0 || width < 0 {
-            return '.';
-        } else if height >= self.height || width >= self.width {
+        if height < 0 || width < 0 || height >= self.height || width >= self.width {
             return '.';
         }
-        return self.problem_data[(height * self.width + width) as usize];
+        self.problem_data[(height * self.width + width) as usize]
     }
 
     pub fn has_special_chars(&self, h_pos: i16, w_pos: i16) -> bool {
@@ -41,7 +39,7 @@ impl Problem {
                 }
             }
         }
-        return false;
+        false
     }
 
     pub fn get_sum_parts(&self) -> u64 {
@@ -88,10 +86,10 @@ impl Problem {
             now_w_pos += 1;
             c = self.get(h_pos, now_w_pos);
         }
-        return (
+        (
             self.width * h_pos + start_w_pos,
             number.parse::<u64>().unwrap(),
-        );
+        )
     }
 
     pub fn find_digits_around_gear(&self, h_pos: i16, w_pos: i16) -> Option<(u64, u64)> {
@@ -110,7 +108,7 @@ impl Problem {
         if all_numbers.len() == 2 {
             return Some((all_numbers[0].1, all_numbers[1].1));
         }
-        return None;
+        None
     }
 
     pub fn get_sum_of_gears(&self) -> u64 {
@@ -124,11 +122,8 @@ impl Problem {
                 if c == '*' {
                     // We got a gear
                     let pair = self.find_digits_around_gear(h, w);
-                    match pair {
-                        Some(pair) => {
-                            result += pair.0 * pair.1;
-                        }
-                        None => {}
+                    if let Some(pair) = pair {
+                        result += pair.0 * pair.1;
                     }
                 }
             }
@@ -144,7 +139,7 @@ fn solve(input: &Vec<String>) -> (u64, u64) {
     let part1 = problem.get_sum_parts();
     let gears_value = problem.get_sum_of_gears();
     let part2 = gears_value;
-    return (part1, part2);
+    (part1, part2)
 }
 
 fn main() {
