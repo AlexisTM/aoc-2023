@@ -1,4 +1,4 @@
-fn solve(_input: &Vec<String>) -> (u64, u64) {
+fn solve(_input: &[String]) -> (u64, u64) {
     let part1 = 0;
     let part2 = 0;
     (part1, part2)
@@ -8,6 +8,7 @@ fn main() {
     let input: Vec<String> = std::fs::read_to_string("inputs/00.txt")
         .unwrap()
         .trim_end()
+        .replace("\r\n", "\n")
         .split('\n')
         .map(String::from)
         .collect();
