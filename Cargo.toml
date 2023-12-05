@@ -29,3 +29,4 @@ path = "days/05.rs"
 
 [dependencies]
 regex="*"
+itertools = "*"
