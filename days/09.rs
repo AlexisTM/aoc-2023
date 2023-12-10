@@ -1,4 +1,4 @@
-use std::iter;
+
 
 fn expander(line: &Vec<i64>) -> Vec<Vec<i64>> {
     let mut problem = Vec::<Vec<i64>>::new();
@@ -18,7 +18,7 @@ fn expander(line: &Vec<i64>) -> Vec<Vec<i64>> {
 }
 
 fn extrapolation(problem: Vec<Vec<i64>>) -> i64 {
-    let mut last = *problem.iter().rev().last().unwrap().last().unwrap();
+    let _last = *problem.iter().rev().last().unwrap().last().unwrap();
     problem
         .iter()
         .rev()
