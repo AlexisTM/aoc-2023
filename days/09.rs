@@ -1,8 +1,6 @@
-
-
-fn expander(line: &Vec<i64>) -> Vec<Vec<i64>> {
+fn expander(line: &[i64]) -> Vec<Vec<i64>> {
     let mut problem = Vec::<Vec<i64>>::new();
-    problem.push(line.clone());
+    problem.push(line.to_owned());
 
     while !problem.last().unwrap().iter().all(|n| *n == 0) {
         let curr = problem.last().unwrap();
