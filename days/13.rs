@@ -1,6 +1,7 @@
 use itertools::Itertools;
 
-fn is_mirrored(mirror: i64, game: &[Vec<char>]) -> bool {
+fn is_mirrored(mirror: i64, game: &[Vec<char>], limit: u64) -> bool {
+    let mut diff = 0;
     for checked_value in 0..(mirror + 1) {
         let left_index = mirror - (checked_value);
         let right_index = mirror + (checked_value + 1);
@@ -9,27 +10,27 @@ fn is_mirrored(mirror: i64, game: &[Vec<char>]) -> bool {
             break;
         }
 
-        // In preparation for part2
-        let diff = game[left_index as usize]
+        diff += game[left_index as usize]
             .iter()
             .zip(&game[right_index as usize])
             .fold(0, |acc, (a, b)| if a != b { acc + 1 } else { acc });
-
-        if diff > 0 {
-            return false;
-        }
     }
-    true
+    diff == limit
 }
 
-fn find_mirrors(game: &[Vec<char>]) -> (Vec<u64>, Vec<u64>) {
-    let mut row_mirrors = Vec::<u64>::new();
-    let mut col_mirrors = Vec::<u64>::new();
+fn find_mirrors(game: &[Vec<char>]) -> ((u64, u64), (u64, u64)) {
+    let mut row_mirror = 0u64;
+    let mut col_mirror = 0u64;
+    let mut row_mirror_p2 = 0u64;
+    let mut col_mirror_p2 = 0u64;
 
     let row_count = game.len();
     for mirror in 0..(row_count - 1) {
-        if is_mirrored(mirror as i64, game) {
-            row_mirrors.push((mirror + 1) as u64);
+        if is_mirrored(mirror as i64, game, 0) {
+            row_mirror = (mirror + 1) as u64;
+        }
+        if is_mirrored(mirror as i64, game, 1) {
+            row_mirror_p2 = (mirror + 1) as u64;
         }
     }
     let transposed_game: Vec<Vec<char>> = (0..game[0].len())
@@ -38,12 +39,15 @@ fn find_mirrors(game: &[Vec<char>]) -> (Vec<u64>, Vec<u64>) {
 
     let col_count = transposed_game.len();
     for mirror in 0..(col_count - 1) {
-        if is_mirrored(mirror as i64, &transposed_game) {
-            col_mirrors.push((mirror + 1) as u64);
+        if is_mirrored(mirror as i64, &transposed_game, 0) {
+            col_mirror = (mirror + 1) as u64;
+        }
+        if is_mirrored(mirror as i64, &transposed_game, 1) {
+            col_mirror_p2 = (mirror + 1) as u64;
         }
     }
 
-    (row_mirrors, col_mirrors)
+    ((row_mirror, col_mirror), (row_mirror_p2, col_mirror_p2))
 }
 
 fn solve(input: &[String]) -> (u64, u64) {
@@ -58,13 +62,13 @@ fn solve(input: &[String]) -> (u64, u64) {
     });
 
     let mut part1 = 0;
+    let mut part2 = 0;
     for game in games.iter() {
-        let (row_mirrors, col_mirrors) = find_mirrors(game);
-        part1 +=
-            col_mirrors.iter().sum::<u64>() + row_mirrors.iter().fold(0u64, |acc, v| acc + v * 100);
+        let ((row_mirror, col_mirror), (row_mirror_p2, col_mirror_p2)) = find_mirrors(game);
+        part1 += col_mirror + row_mirror * 100u64;
+        part2 += col_mirror_p2 + row_mirror_p2 * 100u64;
     }
 
-    let part2 = 0;
     (part1, part2)
 }
 
