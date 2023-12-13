@@ -1,3 +1,3 @@
 fn main() {
-    println!("Run it as: cargo run --day 01");
+    println!("Run it as: cargo run --bin 01");
 }
