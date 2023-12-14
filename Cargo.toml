@@ -60,6 +60,10 @@ path = "days/12.rs"
 name = "13"
 path = "days/13.rs"
 
+[[bin]]
+name = "14"
+path = "days/14.rs"
+
 [dependencies]
 regex = "*"
 itertools = "*"
