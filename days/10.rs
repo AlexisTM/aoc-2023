@@ -9,53 +9,37 @@ enum Direction {
     None,
 }
 
-#[derive(Debug, PartialEq, Clone, Copy)]
-enum Directions {
-    TopLeft,
-    TopRight,
-    TopBot,
-    LeftRight,
-    LeftBot,
-    RightBot,
-    None,
-    Starting,
-}
-
-impl From<char> for Directions {
-    fn from(value: char) -> Self {
-        match value {
-            '|' => Directions::TopBot,
-            '-' => Directions::LeftRight,
-            'L' => Directions::TopRight,
-            'J' => Directions::TopLeft,
-            '7' => Directions::LeftBot,
-            'F' => Directions::RightBot,
-            '.' => Directions::None,
-            'S' => Directions::Starting,
-            _ => Directions::None,
-        }
-    }
-}
-
 #[derive(Debug)]
 struct Problem {
-    problem: Vec<Vec<Directions>>,
+    problem: Vec<Vec<char>>,
     max_height: i64,
     max_width: i64,
     start_value: Position,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct Position {
     pub h: i64,
     pub w: i64,
-    pub val: Directions,
+    pub val: char,
 }
 
 #[derive(Debug, Clone)]
 struct Search {
+    pub path: Vec<Position>,
     pub pos: Position,
     pub steps: i32,
+    pub id: char,
+}
+
+fn print_vec2(name: &str, vec: &[Vec<char>]) {
+    println!("\n{name}");
+    for s in vec.iter() {
+        for c in s.iter() {
+            print!("{c}");
+        }
+        println!()
+    }
 }
 
 impl Problem {
@@ -70,25 +54,25 @@ impl Problem {
         Position {
             h: height,
             w: width,
-            val: Directions::None,
+            val: 'Z',
         }
     }
 
-    pub fn new(input: Vec<Vec<Directions>>) -> Self {
+    pub fn new(input: Vec<Vec<char>>) -> Self {
         let max_height = input.len() as i64;
         let max_width = input.first().unwrap().len() as i64;
         let mut start_value = Position {
             h: 0,
             w: 0,
-            val: Directions::None,
+            val: '.',
         };
         for height in 0..max_height {
             for width in 0..max_width {
-                if input[height as usize][width as usize] == Directions::Starting {
+                if input[height as usize][width as usize] == 'S' {
                     start_value = Position {
                         h: height,
                         w: width,
-                        val: Directions::Starting,
+                        val: 'S',
                     };
                 }
             }
@@ -102,37 +86,39 @@ impl Problem {
         }
     }
 
-    pub fn navigate(&self, search: &Search, to: Direction) -> Direction {
+    pub fn navigate(&mut self, search: &mut Search, to: Direction) -> Direction {
+        //println!("Handling {}, got {}", search.id, search.pos.val);
+        search.path.push(search.pos);
         match to {
             Direction::Top => match search.pos.val {
-                Directions::LeftBot => Direction::Left,
-                Directions::RightBot => Direction::Right,
-                Directions::TopBot => Direction::Top,
+                '7' => Direction::Left,
+                'F' => Direction::Right,
+                '|' => Direction::Top,
                 _ => Direction::None,
             },
             Direction::Bot => match search.pos.val {
-                Directions::TopLeft => Direction::Left,
-                Directions::TopRight => Direction::Right,
-                Directions::TopBot => Direction::Bot,
+                'J' => Direction::Left,
+                'L' => Direction::Right,
+                '|' => Direction::Bot,
                 _ => Direction::None,
             },
             Direction::Left => match search.pos.val {
-                Directions::TopRight => Direction::Top,
-                Directions::LeftRight => Direction::Left,
-                Directions::RightBot => Direction::Bot,
+                'L' => Direction::Top,
+                '-' => Direction::Left,
+                'F' => Direction::Bot,
                 _ => Direction::None,
             },
             Direction::Right => match search.pos.val {
-                Directions::LeftRight => Direction::Right,
-                Directions::TopLeft => Direction::Top,
-                Directions::LeftBot => Direction::Bot,
+                '-' => Direction::Right,
+                'J' => Direction::Top,
+                '7' => Direction::Bot,
                 _ => Direction::None,
             },
             Direction::None => Direction::None,
         }
     }
 
-    pub fn go_through(&self, search: &mut Search, to: Direction) -> Search {
+    pub fn go_through(&mut self, search: &mut Search, to: Direction) -> Search {
         let next_pose = match to {
             Direction::Top => (search.pos.h - 1, search.pos.w),
             Direction::Bot => (search.pos.h + 1, search.pos.w),
@@ -146,7 +132,7 @@ impl Problem {
 
         let mut to = self.navigate(search, to);
 
-        while search.pos.val != Directions::Starting && search.pos.val != Directions::None {
+        while search.pos.val != 'S' && search.pos.val != '.' {
             let next_pose = match to {
                 Direction::Top => (search.pos.h - 1, search.pos.w),
                 Direction::Bot => (search.pos.h + 1, search.pos.w),
@@ -163,12 +149,14 @@ impl Problem {
         search.clone()
     }
 
-    pub fn navigate_all(&self) -> Vec<Search> {
+    pub fn navigate_all(&mut self) -> Vec<Search> {
         let result = vec![
             self.go_through(
                 &mut Search {
                     pos: self.start_value,
                     steps: 0,
+                    id: '1',
+                    path: vec![],
                 },
                 Direction::Top,
             ),
@@ -176,6 +164,8 @@ impl Problem {
                 &mut Search {
                     pos: self.start_value,
                     steps: 0,
+                    id: '2',
+                    path: vec![],
                 },
                 Direction::Bot,
             ),
@@ -183,6 +173,8 @@ impl Problem {
                 &mut Search {
                     pos: self.start_value,
                     steps: 0,
+                    id: '3',
+                    path: vec![],
                 },
                 Direction::Left,
             ),
@@ -190,6 +182,8 @@ impl Problem {
                 &mut Search {
                     pos: self.start_value,
                     steps: 0,
+                    id: '4',
+                    path: vec![],
                 },
                 Direction::Right,
             ),
@@ -199,12 +193,9 @@ impl Problem {
 }
 
 fn solve_part1(input: &[String]) -> u64 {
-    let input = input
-        .iter()
-        .map(|s| s.chars().map(|c| c.into()).collect_vec())
-        .collect_vec();
+    let input = input.iter().map(|s| s.chars().collect_vec()).collect_vec();
 
-    let problem = Problem::new(input);
+    let mut problem = Problem::new(input);
 
     let results = problem.navigate_all();
     for s in results.iter() {
@@ -213,21 +204,50 @@ fn solve_part1(input: &[String]) -> u64 {
     println!();
     let result = results
         .iter()
-        .filter(|s| s.pos.val == Directions::Starting)
+        .filter(|s| s.pos.val == 'S')
         .max_by(|s1, s2| s1.steps.cmp(&s2.steps))
         .unwrap();
     println!("Results: {:?}", result);
+
+    let mut part2 = 0;
+    // part2
+    problem.problem.iter().enumerate().for_each(|(i, row)| {
+        row.iter().enumerate().for_each(|(j, col)| {
+            if *col == '|' {
+                return;
+            }
+            for res in results.iter() {
+                for r in res.path.iter() {
+                    if r.h == i as i64 && r.w == j as i64 {
+                        return;
+                    }
+                }
+            }
+
+            // Ray trace to 0, if odd interesction: good
+            let mut crosses = 0;
+            for ray in 0..i {
+                for r in result.path.iter() {
+                    if r.h == ray as i64 && r.w == j as i64 {
+                        crosses += 1;
+                    }
+                }
+            }
+            if crosses & 1 == 1 {
+                part2 += 1;
+                println!("ray [{i}][{j}]");
+                println!("CROSSES: {crosses}");
+            }
+        })
+    });
 
     result.steps as u64 / 2u64 + (result.steps as u64 & 1u64)
 }
 
 fn solve_part2(input: &[String]) -> u64 {
-    let input = input
-        .iter()
-        .map(|s| s.chars().map(|c| c.into()).collect_vec())
-        .collect_vec();
+    let input = input.iter().map(|s| s.chars().collect_vec()).collect_vec();
 
-    let problem = Problem::new(input);
+    let mut problem = Problem::new(input);
 
     let results = problem.navigate_all();
     for s in results.iter() {
@@ -236,12 +256,46 @@ fn solve_part2(input: &[String]) -> u64 {
     println!();
     let result = results
         .iter()
-        .filter(|s| s.pos.val == Directions::Starting)
+        .filter(|s| s.pos.val == 'S')
         .max_by(|s1, s2| s1.steps.cmp(&s2.steps))
         .unwrap();
-    println!("Results: {:?}", result);
+    println!("Results: {:?}", results);
 
-    result.steps as u64 / 2u64 + (result.steps as u64 & 1u64)
+    print_vec2("RESULT", &problem.problem);
+    let mut part2 = 0;
+    // part2
+    problem.problem.iter().enumerate().for_each(|(i, row)| {
+        row.iter().enumerate().for_each(|(j, col)| {
+            for res in results.iter() {
+                for r in res.path.iter() {
+                    if r.h == i as i64 && r.w == j as i64 {
+                        return;
+                    }
+                }
+            }
+
+            // Ray trace to 0, if odd interesction: good
+            let mut crosses = 0;
+            for ray in 0..i {
+                for r in result.path.iter() {
+                    if r.h == ray as i64 && r.w == j as i64 && problem.problem[ray][j] != '|' {
+                        crosses += 1;
+                        if i == 8 && j == 1 {
+                            println!("ray [{ray}][{j}]");
+                        }
+                    }
+                }
+            }
+            if crosses & 1 == 1 {
+                part2 += 1;
+                println!("ray [{i}][{j}]");
+                println!("CROSSES: {crosses}");
+            }
+        })
+    });
+
+    println!("RESULT ==== {part2}");
+    part2
 }
 
 fn read_lines(input_file: &str) -> Vec<String> {
@@ -257,6 +311,7 @@ fn read_lines(input_file: &str) -> Vec<String> {
 fn main() {
     let input = read_lines("inputs/10.txt");
     let part1 = solve_part1(&input);
+    // solve_part2(&input);
     println!("Part 1: {:?}", part1);
 }
 
