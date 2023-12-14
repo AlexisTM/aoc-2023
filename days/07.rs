@@ -25,7 +25,6 @@ struct HandP2 {
     pub bid: u64,
 }
 
-
 fn hand_kind(hand: &[u8; 5]) -> HandKind {
     let mut counts = [0; 13];
     for card in hand.iter() {
@@ -136,7 +135,6 @@ impl HandP2 {
         }
     }
 }
-
 
 fn solve(input: &[String]) -> (u64, u64) {
     // Exactly one type:
