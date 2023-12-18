@@ -1,7 +1,8 @@
 use std::fmt::{Display, Write};
 
 use itertools::Itertools;
-#[derive(Debug)]
+
+#[derive(Debug, Clone)]
 enum Direction {
     Top,
     Left,
@@ -9,7 +10,7 @@ enum Direction {
     Right,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Node {
     pub val: char,
     pub seen_t: bool,
@@ -18,7 +19,7 @@ struct Node {
     pub seen_r: bool,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Problem {
     pub maze: Vec<Vec<Node>>,
 }
@@ -70,10 +71,8 @@ impl Display for Problem {
     }
 }
 
-fn solve(input: &[String]) -> (u64, u64) {
-    let mut problem: Problem = input.into();
-
-    let mut deque = vec![(0i64, 0i64, Direction::Right)];
+fn energize(problem: &mut Problem, initial_pose: (i64, i64, Direction)) -> u64 {
+    let mut deque = vec![initial_pose];
     while let Some((x, y, to)) = deque.pop() {
         // println!("Visiting {x} {y} {:?}", to);
         if let Some(node) = &mut problem.get(x, y) {
@@ -142,16 +141,43 @@ fn solve(input: &[String]) -> (u64, u64) {
         }
     }
 
-    let part1 = problem.maze.iter().fold(0, |acc, m| {
+    return problem.maze.iter().fold(0, |acc, m| {
         acc + m
             .iter()
             .filter(|n| n.seen_r || n.seen_l || n.seen_t || n.seen_b)
             .count()
     }) as u64;
+}
 
-    println!("{}", problem);
-    let part2 = 0;
+fn solve(input: &[String]) -> (u64, u64) {
+    let mut problem: Problem = input.into();
+    let part1 = energize(&mut problem, (0i64, 0i64, Direction::Right));
 
+    // Just test all possibilities
+    let problem: Problem = input.into();
+    let mut results = Vec::<_>::new();
+    for col in 0..problem.maze[0].len() {
+        results.push(energize(
+            &mut problem.clone(),
+            (0, col as i64, Direction::Bottom),
+        ));
+        results.push(energize(
+            &mut problem.clone(),
+            (problem.maze.len() as i64, col as i64, Direction::Top),
+        ));
+    }
+    for row in 0..problem.maze.len() {
+        results.push(energize(
+            &mut problem.clone(),
+            (row as i64, 0, Direction::Right),
+        ));
+        results.push(energize(
+            &mut problem.clone(),
+            (row as i64, problem.maze[0].len() as i64, Direction::Left),
+        ));
+    }
+
+    let part2 = *results.iter().max().unwrap();
     (part1, part2)
 }
 
