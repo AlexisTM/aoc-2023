@@ -24,7 +24,7 @@ fn check_valid(input: &str, points: &[u64]) -> bool {
 }
 
 fn solve(input: &[String]) -> (u64, u64) {
-    let count = 0;
+    let _count = 0;
     input.iter().for_each(|val| {
         let mut split = val.split(' ');
         let input = split.next().unwrap();

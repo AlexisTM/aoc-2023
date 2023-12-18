@@ -13,18 +13,18 @@ struct Instruction {
     pub action: Action,
 }
 
-impl Into<Instruction> for &str {
-    fn into(self) -> Instruction {
+impl From<&str> for Instruction {
+    fn from(val: &str) -> Self {
         let action;
         let mut lens = None;
-        let last_char = self.chars().last().unwrap();
-        if last_char.is_digit(10) {
+        let last_char = val.chars().last().unwrap();
+        if last_char.is_ascii_digit() {
             action = Action::Add;
             lens = Some((last_char as i32 - '0' as i32) as u16);
         } else {
             action = Action::Remove;
         }
-        let label = self.split(['-', '=']).next().unwrap();
+        let label = val.split(['-', '=']).next().unwrap();
         Instruction {
             id: label
                 .chars()
@@ -45,7 +45,7 @@ fn solve(input: &[String]) -> (u64, u64) {
     });
 
     let mut boxes = Vec::<Vec<Instruction>>::new();
-    boxes.resize_with(256, || Vec::<Instruction>::new());
+    boxes.resize_with(256, Vec::<Instruction>::new);
 
     let instructions: Vec<Instruction> = input.split(',').map(|s| s.into()).collect_vec();
     for instruction in instructions.iter() {
@@ -56,11 +56,7 @@ fn solve(input: &[String]) -> (u64, u64) {
                 .iter()
                 .find_position(|instr| instr.label == instruction.label);
 
-            if let Some(element) = i {
-                Some(element.0)
-            } else {
-                None
-            }
+            i.map(|element| element.0)
         };
         match instruction.action {
             Action::Add => {

@@ -15,7 +15,7 @@ fn print_vec2(name: &str, vec: &[Vec<char>]) {
 
 // Count in one pass;
 fn count_north(input: &[Vec<char>]) -> usize {
-    let mut max_weight = input.len();
+    let max_weight = input.len();
     let mut cur_weights = vec![max_weight; input[0].len()];
     let mut result = 0;
     for (row_id, row) in input.iter().enumerate() {
@@ -181,7 +181,7 @@ O..#.OO...
             .map(|s| s.chars().collect_vec())
             .collect_vec();
 
-        let start = input.clone();
+        let _start = input.clone();
         tilt_north_inplace(input.as_mut_slice());
         let end = input.clone();
         assert_eq!(expected_output, end);

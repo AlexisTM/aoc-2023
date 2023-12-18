@@ -265,7 +265,7 @@ fn solve_part2(input: &[String]) -> u64 {
     let mut part2 = 0;
     // part2
     problem.problem.iter().enumerate().for_each(|(i, row)| {
-        row.iter().enumerate().for_each(|(j, col)| {
+        row.iter().enumerate().for_each(|(j, _col)| {
             for res in results.iter() {
                 for r in res.path.iter() {
                     if r.h == i as i64 && r.w == j as i64 {
