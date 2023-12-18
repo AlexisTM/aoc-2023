@@ -208,6 +208,6 @@ mod tests {
 
         let (part1, part2) = solve(&input);
         assert_eq!(part1, 46);
-        assert_eq!(part2, 0);
+        assert_eq!(part2, 51);
     }
 }
