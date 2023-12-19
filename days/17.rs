@@ -89,7 +89,7 @@ fn get_neighbours_p2(state: &State, matrix: &Matrix<&u8>) -> Vec<(State, u64)> {
             }
 
             next.position = next_position;
-            if next.distance >= 10 {
+            if next.distance > 10 {
                 continue;
             }
             result.push((
