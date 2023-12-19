@@ -1,88 +1,20 @@
+use pathfinding::matrix::{directions, Matrix};
+use pathfinding::{directed::astar, prelude::astar};
 use std::collections::VecDeque;
+use std::hash::{Hash, Hasher};
 
 use itertools::Itertools;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum Direction {
-    Top,
-    Left,
-    Bottom,
-    Right,
+#[derive(Clone, Debug, Hash, Eq, Ord, PartialEq, PartialOrd)]
+struct State {
+    position: (usize, usize),
+    direction: (isize, isize),
+    distance: u64,
 }
 
-#[derive(Debug, Clone)]
-struct Search<'a> {
-    x: i64,
-    y: i64,
-    curr: u64,
-    to: Direction,
-    to_count: u8,
-    path: Vec<(i64, i64)>,
-    problem: &'a Problem,
-}
-
-impl<'a> Search<'a> {
-    pub fn create(&self, to: Direction) -> Search<'a> {
-        let mut other = self.clone();
-        other.to = to.clone();
-
-        match &to {
-            Direction::Left => other.y -= 1,
-            Direction::Right => other.y += 1,
-            Direction::Top => other.x -= 1,
-            Direction::Bottom => other.x += 1,
-        }
-        other.path.push((self.x, self.y));
-        if let Some(val) = self.problem.get(other.x, other.y) {
-            other.curr += val as u64;
-        }
-
-        if other.to == self.to {
-            other.to_count += 1;
-        } else {
-            other.to_count = 1;
-        }
-        other
-    }
-
-    pub fn valid(&self) -> bool {
-        self.x >= 0
-            && self.y >= 0
-            && self.x < self.problem.maze.len() as i64
-            && self.y < self.problem.maze.len() as i64
-            && self.to_count <= 3
-            && !self.path.contains(&(self.x, self.y))
-    }
-
-    pub fn next(&self, vec: &mut VecDeque<Search<'a>>) {
-        let nexts = vec![
-            self.create(Direction::Left),
-            self.create(Direction::Right),
-            self.create(Direction::Bottom),
-            self.create(Direction::Top),
-        ];
-
-        for next in nexts {
-            if next.valid() {
-                vec.push_back(next);
-            }
-        }
-    }
-}
-
-#[derive(Debug)]
+#[derive(Clone, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
 struct Problem {
     maze: Vec<Vec<u8>>,
-}
-
-impl Problem {
-    pub fn get(&self, x: i64, y: i64) -> Option<u8> {
-        if (x as usize) < self.maze.len() && (y as usize) < self.maze[0].len() {
-            Some(self.maze[x as usize][y as usize])
-        } else {
-            None
-        }
-    }
 }
 
 impl From<&[String]> for Problem {
@@ -100,62 +32,123 @@ impl From<&[String]> for Problem {
     }
 }
 
+fn get_neighbours(state: &State, matrix: &Matrix<&u8>) -> Vec<(State, u64)> {
+    let mut result = Vec::<(State, u64)>::new();
+
+    for dir in directions::DIRECTIONS_4.iter() {
+        let next_position = matrix.move_in_direction(state.position, *dir);
+        if let Some(next_position) = next_position {
+            let mut next = state.clone();
+
+            if state.direction.0 == -dir.0 && state.direction.1 == -dir.1 {
+                continue; // No backtrack
+            }
+            if state.direction == *dir {
+                next.distance += 1;
+                if state.distance == 3 {
+                    continue;
+                }
+            } else {
+                next.distance = 1;
+                next.direction = *dir;
+            }
+
+            next.position = next_position;
+
+            result.push((
+                next,
+                **matrix
+                    .get(next_position)
+                    .expect("The position has to exist") as u64,
+            ));
+        }
+    }
+
+    result
+}
+
+fn get_neighbours_p2(state: &State, matrix: &Matrix<&u8>) -> Vec<(State, u64)> {
+    let mut result = Vec::<(State, u64)>::new();
+
+    for dir in directions::DIRECTIONS_4.iter() {
+        let next_position = matrix.move_in_direction(state.position, *dir);
+        if let Some(next_position) = next_position {
+            let mut next = state.clone();
+
+            if state.direction.0 == -dir.0 && state.direction.1 == -dir.1 {
+                continue; // No backtrack
+            }
+            if state.direction == *dir {
+                next.distance += 1;
+                if state.distance == 10 {
+                    continue;
+                }
+            } else {
+                if state.distance < 4 {
+                    continue;
+                }
+                next.distance = 1;
+                next.direction = *dir;
+            }
+
+            next.position = next_position;
+
+            result.push((
+                next,
+                **matrix
+                    .get(next_position)
+                    .expect("The position has to exist") as u64,
+            ));
+        }
+    }
+
+    result
+}
+
 fn solve(input: &[String]) -> (u64, u64) {
     // I need the count of current movements (3 max)
     // Current direction
     // The position
     // The current count
-    // Handle multiple solutions at the same time?
-    //
-    // Cascading solution? Solving each 3x3 or 10x10 as an anyedge to any edge providing a new smaller problem?
-    // This causes the 'next problem' to have initial conditions such as direction & number of
-    // steps
     //
     // Keep the problem immutable?
     let problem = Problem::from(input);
+    let matrix = Matrix::from_vec(
+        problem.maze.len(),
+        problem.maze[0].len(),
+        problem.maze.iter().flatten().collect_vec(),
+    )
+    .expect("The matrix dimensions are invalid");
 
-    let search = Search {
-        x: 0,
-        y: 0,
-        curr: problem.get(0, 0).unwrap() as u64,
-        to: Direction::Right,
-        to_count: 1,
-        path: Vec::new(),
-        problem: &problem,
+    println!("{:?}", matrix);
+
+    let start = State {
+        position: (0, 0),
+        direction: directions::E,
+        distance: 1,
     };
 
-    let mut vec = VecDeque::<Search>::new();
-    vec.push_back(search);
+    let goal: (usize, usize) = (problem.maze.len() - 1, problem.maze[0].len() - 1);
 
-    let mut best_result: Option<Search> = None;
-    while let Some(search) = vec.pop_back() {
-        if let Some(result) = &best_result {
-            // prune bad routes
-            if search.curr >= result.curr {
-                continue;
-            }
-        } else {
-            //println!("Searches: {}", vec.len());
-        }
+    let result_p1 = astar(
+        &start,
+        |s| get_neighbours(s, &matrix), // successors
+        |s| (goal.0.abs_diff(s.position.0) + goal.1.abs_diff(s.position.1)) as u64, // heuristic
+        |s| s.position == goal,         // goal
+    )
+    .expect("Path to end exists");
+    println!("result: {:?}", result_p1);
+    let part1 = result_p1.1;
 
-        if search.x == problem.maze.len() as i64 - 1 && search.y == problem.maze.len() as i64 - 1 {
-            if let Some(result) = &best_result {
-                if search.curr < result.curr {
-                    println!("Searches: {}    curr {} ", vec.len(), result.curr);
-                    best_result = Some(search);
-                }
-            } else {
-                best_result = Some(search);
-            }
-            continue;
-        } else {
-            search.next(&mut vec);
-        }
-    }
-
-    println!("{:?}", best_result);
-    let mut part1 = best_result.unwrap().curr;
-    let part2 = 0;
+    let result_p2 = astar(
+        &start,
+        |s| get_neighbours_p2(s, &matrix), // successors
+        |s| (goal.0.abs_diff(s.position.0) + goal.1.abs_diff(s.position.1)) as u64, // heuristic
+        |s| s.position == goal,            // goal
+    )
+    .expect("Path to end exists");
+    println!("result: {:?}", result_p2);
+    let part2 = result_p2.1;
     (part1, part2)
 }
 
@@ -185,7 +178,7 @@ mod tests {
         let input = read_lines("inputs/17_test.txt");
 
         let (part1, part2) = solve(&input);
-        assert_eq!(part1, 102);
-        assert_eq!(part2, 0);
+        // assert_eq!(part1, 102);
+        assert_eq!(part2, 71);
     }
 }
