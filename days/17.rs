@@ -1,7 +1,7 @@
 use pathfinding::matrix::{directions, Matrix};
-use pathfinding::{directed::astar, prelude::astar};
-use std::collections::VecDeque;
-use std::hash::{Hash, Hasher};
+use pathfinding::prelude::astar;
+
+use std::hash::Hash;
 
 use itertools::Itertools;
 
@@ -80,11 +80,8 @@ fn get_neighbours_p2(state: &State, matrix: &Matrix<&u8>) -> Vec<(State, u64)> {
             }
             if state.direction == *dir {
                 next.distance += 1;
-                if state.distance == 10 {
-                    continue;
-                }
             } else {
-                if state.distance < 4 {
+                if next.distance < 4 {
                     continue;
                 }
                 next.distance = 1;
@@ -92,7 +89,9 @@ fn get_neighbours_p2(state: &State, matrix: &Matrix<&u8>) -> Vec<(State, u64)> {
             }
 
             next.position = next_position;
-
+            if next.distance >= 10 {
+                continue;
+            }
             result.push((
                 next,
                 **matrix
@@ -144,10 +143,25 @@ fn solve(input: &[String]) -> (u64, u64) {
         &start,
         |s| get_neighbours_p2(s, &matrix), // successors
         |s| (goal.0.abs_diff(s.position.0) + goal.1.abs_diff(s.position.1)) as u64, // heuristic
-        |s| s.position == goal,            // goal
+        |s| s.position == goal && s.distance >= 4, // goal
     )
     .expect("Path to end exists");
     println!("result: {:?}", result_p2);
+    // 1197
+
+    let mut resulting_map = problem.maze.clone();
+
+    for r in result_p2.0 {
+        resulting_map[r.position.0][r.position.1] = 0;
+        println!("{:?}", r.position);
+    }
+
+    for val in resulting_map.iter() {
+        for c in val {
+            print!("{c}");
+        }
+        println!();
+    }
     let part2 = result_p2.1;
     (part1, part2)
 }
@@ -178,7 +192,22 @@ mod tests {
         let input = read_lines("inputs/17_test.txt");
 
         let (part1, part2) = solve(&input);
-        // assert_eq!(part1, 102);
+        assert_eq!(part1, 102);
+        assert_eq!(part2, 94);
+    }
+
+    #[test]
+    fn test_more() {
+        let input = "111111111111
+999999999991
+999999999991
+999999999991
+999999999991"
+            .split('\n')
+            .map(String::from)
+            .collect_vec();
+
+        let (_, part2) = solve(&input);
         assert_eq!(part2, 71);
     }
 }
