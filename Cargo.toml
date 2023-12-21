@@ -76,8 +76,13 @@ path = "days/16.rs"
 name = "17"
 path = "days/17.rs"
 
+[[bin]]
+name = "20"
+path = "days/20.rs"
+
 [dependencies]
 regex = "*"
 itertools = "*"
 rayon = "*"
 pathfinding = "4"
+once_cell = "*"
