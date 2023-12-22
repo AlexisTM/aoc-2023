@@ -1,9 +1,9 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
 use rayon::iter::Split;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Condition {
     pub var: char,
     pub comp: char,
@@ -25,7 +25,7 @@ impl From<&str> for Condition {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone)]
 struct Instruction {
     pub identifier: String,
     pub conditions: Vec<Condition>,
@@ -102,6 +102,24 @@ impl Part {
     }
 }
 
+fn find_source(
+    dest: &str,
+    instructions: &HashMap<String, Instruction>,
+) -> (HashSet<Condition>, HashSet<Condition>) {
+    let mut true_conds = HashSet::<Condition>::new();
+    let mut false_conds = HashSet::<Condition>::new();
+
+    // For each instruction reaching A or R,
+    for instruction in instructions.values() {
+        if instruction.else_cond == dest {
+            false_conds.extend(instruction.conditions.clone());
+        } else {
+            for condition in instruction.conditions.iter() {}
+        }
+    }
+    (true_conds, false_conds)
+}
+
 fn solve(instructions_str: &[String], data_str: &[String]) -> (u64, u64) {
     let mut instructions = HashMap::<String, Instruction>::new();
     let mut parts = Vec::<Part>::new();
@@ -134,11 +152,26 @@ fn solve(instructions_str: &[String], data_str: &[String]) -> (u64, u64) {
             current_instr = part.work(instruction);
         }
     }
-
     let part1 = accepted.iter().map(|p| p.x + p.m + p.a + p.s).sum();
     println!("{:?}", accepted);
     println!("{:?}", parts);
+
     let part2 = 0;
+    // Part2: going backwards, finding all that returns "A", and if it does, go up the conditions
+    // and save all ranges.
+    // Then, we need to find the combinations of each of those.
+
+    // 1: All "A" defaults.
+    // 2: All "result A" returns
+    //
+    for instruction in instructions.values() {
+        if instruction.else_cond == "A" {
+            println!(
+                "instruction: {}  accepts on failure of {:?}",
+                instruction.identifier, instruction.conditions
+            );
+        }
+    }
     (part1, part2)
 }
 
